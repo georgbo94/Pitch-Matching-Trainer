@@ -1,0 +1,22 @@
+{
+  "name": "Pitch Matching Trainer",
+  "short_name": "PMT",
+  "description": "Pitch Matching Trainer Web App",
+  "scope": "/Pitch-Matching-Trainer/",
+  "start_url": "/Pitch-Matching-Trainer/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/Pitch-Matching-Trainer/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/Pitch-Matching-Trainer/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
