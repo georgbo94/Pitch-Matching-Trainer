@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="manifest" href="/Pitch-Matching-Trainer/manifest.webmanifest" />
   <title>Pitch Matching Trainer</title>
 
   <style>
@@ -24,8 +25,9 @@
       padding:0;
       overscroll-behavior:none;
       touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
-    html{ font-size:16px; }
 
     /* fixed-scale host (no responsive reflow) */
     body{
@@ -175,9 +177,9 @@
 
     /* selects stay compact */
     .controls select{
-      flex: 0 0 auto;
-      width: auto;
-      min-width: 5.2rem;
+      flex: 0 0 5.7rem;
+      width: 5.7rem;
+      min-width: 5.7rem;
       padding: .24rem .44rem;
     }
 
@@ -216,12 +218,15 @@
     .groupGap{ margin-left: 10px; }
     .row4{
       display:grid;
-      grid-template-columns: 5.5rem 7rem 5.1rem max-content;
+      grid-template-columns: 5.5rem 6.6rem 3.9rem 6.6rem;
       gap:.45rem;
       align-items:center;
     }
+    #tuningRow{
+      grid-template-columns: 5.5rem 6.6rem 5.2rem 6.2rem;
+    }
     #shiftRow{
-      grid-template-columns: 5.5rem 7rem 6.1rem max-content;
+      grid-template-columns: 5.5rem 7.2rem 3.2rem 6.2rem;
     }
     #shiftType.hidden{
       display:none !important;
@@ -590,7 +595,7 @@
             <label class="toggle" title="Replay the target tone after a correct hit">
               <input id="replayToggle" type="checkbox" />
               <span class="track" aria-hidden="true"><span class="thumb"></span></span>
-              <span id="replayState" class="toggleState">OFF</span>
+              <span id="replayState" class="toggleState">off</span>
             </label>
           </div>
 
@@ -655,6 +660,13 @@
   </div>
 
   <script src="js/app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/Pitch-Matching-Trainer/sw.js");
+      });
+    }
+  </script>
 
   <script>
     (function(){
