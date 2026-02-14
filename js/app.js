@@ -1512,3 +1512,93 @@
     els.debugToggleBtn.addEventListener("click", ()=>{
       els.debugPanel.classList.toggle("hidden");
       els.debugToggleBtn.textContent = els.debugPanel.classList.contains("hidden") ? "Debug" : "Debug (On)";
+    });
+  }
+  wireSettingsPersistence();
+
+  // NEW: tuning + transpose persistence + live rebuild
+  if(els.tuningInput){
+    els.tuningInput.addEventListener("blur", applyTuningChange);
+    els.tuningInput.addEventListener("change", applyTuningChange);
+  }
+  if(els.transposeInput){
+    els.transposeInput.addEventListener("blur", applyTransposeChange);
+    els.transposeInput.addEventListener("change", applyTransposeChange);
+  }
+
+  /* =========================
+     INIT DROPDOWNS
+     ========================= */
+  (function init(){
+    if(!SHOW_DEBUG_UI && els.debugWrap){
+      hide(els.debugWrap);
+    }
+
+    const persisted = loadPersistedSettings();
+
+    // Restore A4 + transpose first (so labels build correctly)
+    if(els.tuningInput){
+      const savedA4 = safeGetLS(LS_TUNING);
+      if(savedA4 !== null) els.tuningInput.value = savedA4;
+      if(persisted && Object.prototype.hasOwnProperty.call(persisted, "tuningInput")){
+        els.tuningInput.value = String(persisted.tuningInput);
+      }
+      sanitizeTuning();
+    }
+    if(els.transposeInput){
+      const savedT = safeGetLS(LS_TRANSPOSE);
+      if(savedT !== null) els.transposeInput.value = savedT;
+      if(persisted && Object.prototype.hasOwnProperty.call(persisted, "transposeInput")){
+        els.transposeInput.value = String(persisted.transposeInput);
+      }
+      // normalize to int string
+      els.transposeInput.value = String(getTranspose());
+    }
+
+    els.rangeLow.innerHTML = "";
+    els.rangeHigh.innerHTML = "";
+    for(let m=GLOBAL_MIN_MIDI; m<=GLOBAL_MAX_MIDI; m++){
+      addOpt(els.rangeLow, m, midiToNameForDropdown(m));
+      addOpt(els.rangeHigh, m, midiToNameForDropdown(m));
+    }
+    els.rangeLow.value = "45";  // A2 (concert value; label is transposed display)
+    els.rangeHigh.value = "67"; // G4
+
+    els.jumpMin.innerHTML = "";
+    els.jumpMax.innerHTML = "";
+    addOpt(els.jumpMin, "none", "None");
+    addOpt(els.jumpMax, "none", "None");
+    for(let j=0; j<=36; j++){
+      addOpt(els.jumpMin, j, String(j));
+      addOpt(els.jumpMax, j, String(j));
+    }
+    els.jumpMin.value = "1";
+    els.jumpMax.value = "12";
+
+    // Tonal root selector (display-only transposed labels)
+    rebuildRootDropdown();
+    els.rootPc.value = els.rootPc.value || "0";
+
+    applyPersistedSettings(persisted);
+    if(els.shiftInputChr) els.shiftInputChr.value = String(parseIntOr(els.shiftInputChr.value, 0));
+    if(els.shiftInputDia) els.shiftInputDia.value = String(parseIntOr(els.shiftInputDia.value, 1));
+    els.upIntervals.value = sanitizeIntervalListString(els.upIntervals.value);
+    els.downIntervals.value = sanitizeIntervalListString(els.downIntervals.value);
+    intervalsSymValue = intervalsSymValue || DEFAULT_INTERVAL_LIST;
+    intervalsAsymUpValue = intervalsAsymUpValue || DEFAULT_INTERVAL_LIST;
+    intervalsAsymDownValue = intervalsAsymDownValue || DEFAULT_INTERVAL_LIST;
+    prevSymmetricMode = null;
+
+    els.tonalDegrees.value = sanitizeTonalDegreesString(els.tonalDegrees.value);
+    sanitizeCents();
+    sanitizeTolSoundRepeat();
+    onShiftInputStep();
+
+    syncReplayStateLabel();
+
+    tunerNoSignal();
+    setIntervalModeUI();
+    savePersistedSettings();
+  })();
+
+})();
