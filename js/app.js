@@ -824,6 +824,10 @@
   let noteStartTs = 0;
   let lastNoteSeconds = 0;
   let totalSolvedSeconds = 0;
+  let isIOSRuntime = false;
+  let targetPlayUntilTs = 0;
+  let bleedFloorDb = -120;
+  let bleedLearnUntilTs = 0;
 
   /* =========================
      FIXED INTERNAL PARAMS
@@ -838,6 +842,10 @@
   const CONFIRM_MS = 450;
   const CONFIRM_GAP_MS = 120;
   const HIT_HOLD_MS = 100;
+  const IOS_BLEED_GATE_ENABLED = false;
+  const IOS_BLEED_MARGIN_DB = 8;
+  const IOS_BLEED_LEARN_MS = 180;
+  const IOS_BLEED_FREQ_WINDOW_CENTS = 30;
 
   /* =========================
      AUDIO HELPERS
@@ -1110,9 +1118,20 @@
   /* =========================
      TARGET START / REPEAT
      ========================= */
+  function markTargetPlaybackWindow(ms){
+    const now = performance.now();
+    const durMs = Math.max(0, Number(ms) || 0);
+    targetPlayUntilTs = Math.max(targetPlayUntilTs, now + durMs + 40);
+    if(isIOSRuntime){
+      bleedFloorDb = -120;
+      bleedLearnUntilTs = now + Math.min(IOS_BLEED_LEARN_MS, durMs);
+    }
+  }
+
   function playTargetNow(ms){
     const {soundMs} = sanitizeTolSoundRepeat();
     const durMs = (ms ?? soundMs);
+    markTargetPlaybackWindow(durMs);
     playTone(targetFreq, durMs, {stopExisting:true});
   }
 
@@ -1168,9 +1187,45 @@
   async function start(){
     await ensureAudioCtx();
 
+    const ua = navigator.userAgent || "";
+    const isIOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes("Macintosh") && (navigator.maxTouchPoints || 0) > 1);
+    isIOSRuntime = isIOS;
+    const iosAudioConstraints = {
+      echoCancellation: true,
+      noiseSuppression: false,
+      autoGainControl: false,
+      channelCount: 1,
+      latency: 0
+    };
+    const audioConstraints = isIOS
+      ? iosAudioConstraints
+      : { echoCancellation:false, noiseSuppression:false, autoGainControl:false };
+
     micStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false }
+      audio: audioConstraints
     });
+    const micTrack = micStream.getAudioTracks()[0] || null;
+    if(isIOS && micTrack && typeof micTrack.applyConstraints === "function"){
+      try{
+        await micTrack.applyConstraints(iosAudioConstraints);
+      }catch(err){
+        console.warn("iOS applyConstraints failed:", err);
+      }
+    }
+    if(micTrack && typeof micTrack.getSettings === "function"){
+      const s = micTrack.getSettings();
+      console.log("Mic settings:", {
+        isIOS,
+        echoCancellation: s.echoCancellation,
+        noiseSuppression: s.noiseSuppression,
+        autoGainControl: s.autoGainControl,
+        channelCount: s.channelCount,
+        latency: s.latency,
+        sampleRate: s.sampleRate
+      });
+    }
 
     micSource = audioCtx.createMediaStreamSource(micStream);
 
@@ -1200,6 +1255,9 @@
     targetFreq = 0;
     hitLocked = false;
     inTolSinceTs = 0;
+    targetPlayUntilTs = 0;
+    bleedFloorDb = -120;
+    bleedLearnUntilTs = 0;
 
     tunerSmooth = 0;
     lastInputTs = 0;
@@ -1236,13 +1294,41 @@
       const goalFreq = goalFreqFromPlayedFreq(targetFreq, targetMidi);
 
       const now = performance.now();
-      const hasInput = (!hitLocked && goalFreq > 0 && loudEnough && clearEnough && freq > 0);
       let diffGoal = NaN;
+      if(goalFreq > 0 && freq > 0){
+        diffGoal = 1200 * Math.log2(freq / goalFreq);
+      }
+      const isOutputActive = now <= targetPlayUntilTs;
+      if(
+        IOS_BLEED_GATE_ENABLED &&
+        isIOSRuntime &&
+        isOutputActive &&
+        now <= bleedLearnUntilTs &&
+        clearEnough &&
+        Number.isFinite(diffGoal) &&
+        Math.abs(diffGoal) <= IOS_BLEED_FREQ_WINDOW_CENTS
+      ){
+        bleedFloorDb = Math.max(bleedFloorDb, db);
+      }
+      const bleedGateBlocks =
+        IOS_BLEED_GATE_ENABLED &&
+        isIOSRuntime &&
+        isOutputActive &&
+        bleedFloorDb > -119 &&
+        Number.isFinite(diffGoal) &&
+        Math.abs(diffGoal) <= IOS_BLEED_FREQ_WINDOW_CENTS &&
+        db < (bleedFloorDb + IOS_BLEED_MARGIN_DB);
+      const hasInput = (
+        !hitLocked &&
+        goalFreq > 0 &&
+        loudEnough &&
+        clearEnough &&
+        freq > 0 &&
+        !bleedGateBlocks
+      );
 
       if(hasInput){
         lastInputTs = now;
-
-        diffGoal = 1200 * Math.log2(freq / goalFreq);
         tunerSmooth = (1 - TUNER_SMOOTH_A) * tunerSmooth + TUNER_SMOOTH_A * diffGoal;
 
         if(now - lastTunerUiTs >= TUNER_UI_MS){
@@ -1317,7 +1403,11 @@
     }
     updateAvgNote();
     running = false;
+    isIOSRuntime = false;
     inTolSinceTs = 0;
+    targetPlayUntilTs = 0;
+    bleedFloorDb = -120;
+    bleedLearnUntilTs = 0;
     els.toggleBtn.textContent = "Start";
     tunerNoSignal();
     stopAllAudio();
@@ -1422,93 +1512,3 @@
     els.debugToggleBtn.addEventListener("click", ()=>{
       els.debugPanel.classList.toggle("hidden");
       els.debugToggleBtn.textContent = els.debugPanel.classList.contains("hidden") ? "Debug" : "Debug (On)";
-    });
-  }
-  wireSettingsPersistence();
-
-  // NEW: tuning + transpose persistence + live rebuild
-  if(els.tuningInput){
-    els.tuningInput.addEventListener("blur", applyTuningChange);
-    els.tuningInput.addEventListener("change", applyTuningChange);
-  }
-  if(els.transposeInput){
-    els.transposeInput.addEventListener("blur", applyTransposeChange);
-    els.transposeInput.addEventListener("change", applyTransposeChange);
-  }
-
-  /* =========================
-     INIT DROPDOWNS
-     ========================= */
-  (function init(){
-    if(!SHOW_DEBUG_UI && els.debugWrap){
-      hide(els.debugWrap);
-    }
-
-    const persisted = loadPersistedSettings();
-
-    // Restore A4 + transpose first (so labels build correctly)
-    if(els.tuningInput){
-      const savedA4 = safeGetLS(LS_TUNING);
-      if(savedA4 !== null) els.tuningInput.value = savedA4;
-      if(persisted && Object.prototype.hasOwnProperty.call(persisted, "tuningInput")){
-        els.tuningInput.value = String(persisted.tuningInput);
-      }
-      sanitizeTuning();
-    }
-    if(els.transposeInput){
-      const savedT = safeGetLS(LS_TRANSPOSE);
-      if(savedT !== null) els.transposeInput.value = savedT;
-      if(persisted && Object.prototype.hasOwnProperty.call(persisted, "transposeInput")){
-        els.transposeInput.value = String(persisted.transposeInput);
-      }
-      // normalize to int string
-      els.transposeInput.value = String(getTranspose());
-    }
-
-    els.rangeLow.innerHTML = "";
-    els.rangeHigh.innerHTML = "";
-    for(let m=GLOBAL_MIN_MIDI; m<=GLOBAL_MAX_MIDI; m++){
-      addOpt(els.rangeLow, m, midiToNameForDropdown(m));
-      addOpt(els.rangeHigh, m, midiToNameForDropdown(m));
-    }
-    els.rangeLow.value = "45";  // A2 (concert value; label is transposed display)
-    els.rangeHigh.value = "67"; // G4
-
-    els.jumpMin.innerHTML = "";
-    els.jumpMax.innerHTML = "";
-    addOpt(els.jumpMin, "none", "None");
-    addOpt(els.jumpMax, "none", "None");
-    for(let j=0; j<=36; j++){
-      addOpt(els.jumpMin, j, String(j));
-      addOpt(els.jumpMax, j, String(j));
-    }
-    els.jumpMin.value = "1";
-    els.jumpMax.value = "12";
-
-    // Tonal root selector (display-only transposed labels)
-    rebuildRootDropdown();
-    els.rootPc.value = els.rootPc.value || "0";
-
-    applyPersistedSettings(persisted);
-    if(els.shiftInputChr) els.shiftInputChr.value = String(parseIntOr(els.shiftInputChr.value, 0));
-    if(els.shiftInputDia) els.shiftInputDia.value = String(parseIntOr(els.shiftInputDia.value, 1));
-    els.upIntervals.value = sanitizeIntervalListString(els.upIntervals.value);
-    els.downIntervals.value = sanitizeIntervalListString(els.downIntervals.value);
-    intervalsSymValue = intervalsSymValue || DEFAULT_INTERVAL_LIST;
-    intervalsAsymUpValue = intervalsAsymUpValue || DEFAULT_INTERVAL_LIST;
-    intervalsAsymDownValue = intervalsAsymDownValue || DEFAULT_INTERVAL_LIST;
-    prevSymmetricMode = null;
-
-    els.tonalDegrees.value = sanitizeTonalDegreesString(els.tonalDegrees.value);
-    sanitizeCents();
-    sanitizeTolSoundRepeat();
-    onShiftInputStep();
-
-    syncReplayStateLabel();
-
-    tunerNoSignal();
-    setIntervalModeUI();
-    savePersistedSettings();
-  })();
-
-})();
