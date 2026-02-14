@@ -523,7 +523,7 @@
   }
 
   function syncReplayStateLabel(){
-    els.replayState.textContent = els.replayToggle.checked ? "ON" : "OFF";
+    els.replayState.textContent = els.replayToggle.checked ? "on" : "off";
   }
 
   function updateDebugReadout(data){
