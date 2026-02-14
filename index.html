@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link rel="manifest" href="/Pitch-Matching-Trainer/manifest.webmanifest" />
   <title>Pitch Matching Trainer</title>
 
@@ -12,7 +12,7 @@
       --panel:#fff;
       --fg:#222;
       --muted:#666;
-      --border:#040101;
+      --border:#c8c8c8;
       --shadow:0 1px 8px rgba(0,0,0,.08);
       --radius:14px;
       --design-width:470px;
@@ -23,10 +23,9 @@
       height:100%;
       margin:0;
       padding:0;
+      overflow:hidden;
       overscroll-behavior:none;
       touch-action: manipulation;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
     }
 
     /* fixed-scale host (no responsive reflow) */
@@ -35,16 +34,14 @@
       color:var(--fg);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       padding:.75rem;
-      overflow-x:hidden;
-      overflow-y:auto;
       display:flex;
       justify-content:flex-start;
-      align-items:flex-start;
+      overflow:hidden;
     }
 
     /* DESIGN WIDTH */
     .appScale{
-      width:var(--design-width);
+      width:470px;
       transform-origin:top left;
     }
 
@@ -54,7 +51,7 @@
     input, select, button { min-width:0; }
 
     main.app{
-      width:var(--design-width);
+      width:100%;
       margin:0;
       padding:.9rem;
       display:flex;
@@ -688,9 +685,7 @@
   <!-- SAFE SCALING -->
   <script>
     (function(){
-      const DESIGN = parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--design-width")
-      ) || 470;
+      const DESIGN = 470;
       const el = document.getElementById("appScale");
 
       function getHorizontalBodyPaddingPx(){
