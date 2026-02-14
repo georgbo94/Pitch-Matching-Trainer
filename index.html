@@ -18,6 +18,10 @@
     }
 
     *{ box-sizing:border-box; }
+    html{
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     html, body{
       height:100%;
       margin:0;
@@ -36,6 +40,8 @@
       background:var(--bg);
       color:var(--text);
       font-family:ui-monospace, monospace;
+      font-size:16px;
+      line-height:1.25;
       padding:.75rem;
       display:flex;
       justify-content:flex-start;
@@ -105,6 +111,7 @@
     select, input, button{
       font-family:inherit;
       font-size:16px;
+      line-height:1.2;
       padding:6px 6px;
       border:1.5px solid var(--border);
       border-radius:12px;
@@ -113,6 +120,9 @@
       outline:none;
       -webkit-tap-highlight-color: transparent;
       caret-color: var(--text);
+    }
+    select, input{
+      height:44px;
     }
     input:focus, select:focus, button:focus{
       box-shadow:none;
