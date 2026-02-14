@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="manifest" href="/Pitch-Matching-Trainer/manifest.webmanifest" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <link rel="manifest" href="/Pitch-Matching-Trainer/manifest.webmanifest"/>
   <title>Pitch Matching Trainer</title>
 
   <style>
     :root{
-      --bg:#fafafa;
-      --panel:#fff;
+      --bg:#f4f4f4;
+      --card:#f7f7f7;
       --fg:#222;
       --muted:#666;
       --border:#c8c8c8;
       --shadow:0 1px 8px rgba(0,0,0,.08);
-      --radius:14px;
+      --radius:18px;
       --design-width:470px;
     }
 
@@ -28,7 +28,10 @@
       touch-action: manipulation;
     }
 
-    /* fixed-scale host (no responsive reflow) */
+    .row > * { min-width:0; }
+    .controls > * { min-width:0; }
+    input, select, button { min-width:0; }
+
     body{
       background:var(--bg);
       color:var(--fg);
@@ -39,43 +42,26 @@
       overflow:hidden;
     }
 
-    /* DESIGN WIDTH */
     .appScale{
       width:470px;
       transform-origin:top left;
     }
 
-    /* prevent flex/grid blowouts */
-    .row > * { min-width:0; }
-    .controls > * { min-width:0; }
-    input, select, button { min-width:0; }
-
-    main.app{
-      width:100%;
-      margin:0;
-      padding:.9rem;
-      display:flex;
-      flex-direction:column;
-      gap:.75rem;
-      min-height: 100dvh;
+    .wrap{
+      width:470px;
+      padding:10px 0 20px;
     }
 
-    header{
-      display:flex;
-      align-items:baseline;
-      justify-content:center;
-      gap:.8rem;
-      padding: .1rem .2rem;
-    }
     h1{
-      margin:0;
+      text-align:center;
+      margin:4px 0 12px;
       font-size:1.4rem;
       line-height:1.15;
     }
 
-    .panel{
-      background:var(--panel);
-      border:1px solid var(--border);
+    .card{
+      background:var(--card);
+      border:1.5px solid var(--border);
       border-radius: var(--radius);
       padding: .8rem;
       box-shadow: var(--shadow);
@@ -87,7 +73,6 @@
       gap:.45rem;
     }
 
-    /* slightly narrower label column so combined rows fit */
     .row{
       display:grid;
       grid-template-columns: 5.5rem 1fr;
@@ -101,7 +86,6 @@
       white-space:nowrap;
     }
 
-    /* no flex growth in controls */
     .controls{
       display:flex;
       align-items:center;
@@ -116,7 +100,6 @@
       white-space:nowrap;
     }
 
-    /* Base control sizing */
     select, input, button{
       font: inherit;
       font-size: 1rem;
@@ -131,14 +114,12 @@
       box-shadow: 0 0 0 3px rgba(0,0,0,.06);
     }
 
-    /* Number input widths sized by expected digit count */
     input[type="number"]{
       width: calc(4ch + 1.9rem);
       flex: 0 0 calc(4ch + 1.9rem);
       text-align: right;
     }
 
-    /* Keep text inputs compact but readable */
     input[type="text"]{
       flex: 0 0 14.5rem;
       width: 14.5rem;
@@ -146,7 +127,6 @@
       max-width: 14.5rem;
     }
 
-    /* Intervals list fields should span the full available control width */
     #upIntervals, #downIntervals{
       flex: 1 1 auto;
       width: 100%;
@@ -154,7 +134,6 @@
       max-width: none;
     }
 
-    /* Per-field sizing where max values need more digits */
     #tuningInput, #soundInput, #repeatInput, #centMax{
       width: calc(5ch + 2rem);
       flex: 0 0 calc(5ch + 2rem);
@@ -163,24 +142,17 @@
       width: calc(4ch + 1.8rem);
       flex: 0 0 calc(4ch + 1.8rem);
     }
-    #transposeInput{
-      width: calc(4ch + 1.8rem);
-      flex: 0 0 calc(4ch + 1.8rem);
-    }
-    #shiftInputChr, #shiftInputDia{
+    #transposeInput, #shiftInputChr, #shiftInputDia{
       width: calc(4ch + 1.8rem);
       flex: 0 0 calc(4ch + 1.8rem);
     }
 
-    /* selects stay compact */
     .controls select{
       flex: 0 0 5.7rem;
       width: 5.7rem;
       min-width: 5.7rem;
       padding: .24rem .44rem;
     }
-
-    /* A few selects can be shorter */
     #rangeLow, #rangeHigh{ min-width: 4.3rem; }
     #jumpMin, #jumpMax{ min-width: 4.6rem; }
 
@@ -199,7 +171,6 @@
       flex: 0 0 auto;
     }
 
-    /* IMPORTANT: do NOT set width here (that was the cascade grenade) */
     .group input{
       flex: 0 0 auto;
       min-width: 0;
@@ -212,7 +183,6 @@
       white-space:nowrap;
     }
 
-    .groupGap{ margin-left: 10px; }
     .row4{
       display:grid;
       grid-template-columns: 5.5rem 6.6rem 3.9rem 6.6rem;
@@ -225,9 +195,6 @@
     #shiftRow{
       grid-template-columns: 5.5rem 7.2rem 3.2rem 6.2rem;
     }
-    #shiftType.hidden{
-      display:none !important;
-    }
 
     hr.sep{
       border:none;
@@ -239,6 +206,7 @@
       display:flex;
       gap:.6rem;
       width:100%;
+      margin-top:.5rem;
     }
 
     button{
@@ -250,12 +218,6 @@
       appearance:none;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
-    }
-    button:hover,
-    button:active,
-    button:focus,
-    button:focus-visible{
-      color:var(--fg);
     }
     button.primary{
       font-weight:700;
@@ -276,13 +238,14 @@
       min-height:1.6em;
       display:flex;
       align-items:center;
-      margin:.05rem 0 .2rem;
+      margin:.65rem 0 .2rem;
     }
 
     .stats{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:.25rem .85rem;
+      margin-top:.45rem;
     }
     .stat{
       display:flex;
@@ -292,6 +255,7 @@
     }
     .k{ opacity:.75; }
     .v{ font-weight:800; }
+
     .debugWrap{
       margin-top:.45rem;
       border-top:1px dashed var(--border);
@@ -319,9 +283,6 @@
     .debugK{ opacity:.75; }
     .debugV{ font-weight:700; }
 
-    /* =========================
-       Mode visual grouping
-       ========================= */
     .modeSettings{
       margin-top: .15rem;
       border: 1px solid var(--border);
@@ -333,7 +294,6 @@
       gap:.45rem;
     }
 
-    /* no nested box */
     .modeSettings .subpanel{
       border:none;
       padding:0;
@@ -344,9 +304,6 @@
       gap:.45rem;
     }
 
-    /* =========================
-       Replay toggle
-       ========================= */
     .toggle{
       display:inline-flex;
       align-items:center;
@@ -402,9 +359,6 @@
       white-space:nowrap;
     }
 
-    /* =========================
-       Needle tuner
-       ========================= */
     #tuner{
       margin:.15rem 0 .35rem;
     }
@@ -451,35 +405,31 @@
 
 <body>
   <div class="appScale" id="appScale">
-    <main class="app">
-      <header>
-        <h1>🎹 Pitch Matching Trainer</h1>
-      </header>
+    <div class="wrap">
+      <h1>Pitch Matching Trainer</h1>
 
-      <section class="panel">
+      <div class="card">
         <form id="settings" autocomplete="off">
-
-          <!-- TUNING + TRANSPOSE -->
           <div class="row4" id="tuningRow">
             <label>Tuning</label>
             <span class="group">
-              <input id="tuningInput" type="number" value="440" />
+              <input id="tuningInput" type="number" value="440"/>
               <span class="unit">Hz</span>
             </span>
             <span class="sub">Transpose</span>
             <span class="group">
-              <input id="transposeInput" type="number" value="0" step="1" />
+              <input id="transposeInput" type="number" value="0" step="1"/>
               <span class="unit">st</span>
             </span>
           </div>
 
-          <hr class="sep" />
+          <hr class="sep"/>
 
           <div class="row">
             <label for="rangeLow">Range</label>
             <div class="controls">
               <select id="rangeLow"></select>
-              <span class="dash">–</span>
+              <span class="dash">-</span>
               <select id="rangeHigh"></select>
             </div>
           </div>
@@ -488,7 +438,7 @@
             <label for="intervalMode">Mode</label>
             <div class="controls">
               <select id="intervalMode">
-                <option value="minmax">Min–Max</option>
+                <option value="minmax">Min-Max</option>
                 <option value="lists">Intervals</option>
                 <option value="tonal">Tonal</option>
                 <option value="continuous">Continuous</option>
@@ -505,7 +455,7 @@
               <label>Interval</label>
               <div class="controls">
                 <select id="jumpMin"></select>
-                <span class="dash">–</span>
+                <span class="dash">-</span>
                 <select id="jumpMax"></select>
               </div>
             </div>
@@ -514,12 +464,12 @@
               <label>Interval</label>
               <div class="controls">
                 <span class="group">
-                  <input id="centMin" type="number" value="20" />
+                  <input id="centMin" type="number" value="20"/>
                   <span class="unit">¢</span>
                 </span>
-                <span class="dash">–</span>
+                <span class="dash">-</span>
                 <span class="group">
-                  <input id="centMax" type="number" value="1200" />
+                  <input id="centMax" type="number" value="1200"/>
                   <span class="unit">¢</span>
                 </span>
               </div>
@@ -529,14 +479,14 @@
               <div class="row">
                 <label id="upIntervalsLabel" for="upIntervals">Intervals ↑</label>
                 <div class="controls">
-                  <input id="upIntervals" type="text" value="0 1 2 3 4 5 6 7 8 9 10 11" />
+                  <input id="upIntervals" type="text" value="0 1 2 3 4 5 6 7 8 9 10 11"/>
                 </div>
               </div>
 
               <div id="downIntervalsRow" class="row hidden">
                 <label for="downIntervals">Intervals↓</label>
                 <div class="controls">
-                  <input id="downIntervals" type="text" value="0 1 2 3 4 5 6 7 8 9 10 11" />
+                  <input id="downIntervals" type="text" value="0 1 2 3 4 5 6 7 8 9 10 11"/>
                 </div>
               </div>
             </div>
@@ -551,109 +501,105 @@
             <div id="tonalRow2" class="row hidden">
               <label for="tonalDegrees">Degrees</label>
               <div class="controls">
-                <input id="tonalDegrees" type="text" value="0 2 4 5 7 9 11" />
+                <input id="tonalDegrees" type="text" value="0 2 4 5 7 9 11"/>
               </div>
             </div>
           </div>
 
-          <hr class="sep" />
+          <hr class="sep"/>
 
           <div class="row4" id="shiftRow">
             <label for="shiftInputChr">Offset</label>
             <span id="shiftTypeWrap" class="group">
               <span class="sub">Chr</span>
               <label class="toggle" title="Offset type: Chr or Dia">
-                <input id="shiftType" type="checkbox" />
+                <input id="shiftType" type="checkbox"/>
                 <span class="track" aria-hidden="true"><span class="thumb"></span></span>
               </label>
               <span class="sub">Dia</span>
             </span>
             <span class="group">
               <span id="shiftChrWrap" class="group">
-                <input id="shiftInputChr" type="number" value="0" step="1" />
+                <input id="shiftInputChr" type="number" value="0" step="1"/>
                 <span class="unit">st</span>
               </span>
               <span id="shiftDiaWrap" class="group hidden">
-                <input id="shiftInputDia" type="number" value="1" step="1" />
+                <input id="shiftInputDia" type="number" value="1" step="1"/>
                 <span class="unit">deg</span>
               </span>
             </span>
             <span></span>
           </div>
 
-          <!-- TOLERANCE + REPLAY -->
           <div class="row4" id="tolReplayRow">
             <label>Tolerance</label>
             <span class="group">
-              <input id="tolInput" type="number" value="25" />
+              <input id="tolInput" type="number" value="25"/>
               <span class="unit">¢</span>
             </span>
             <span class="sub">Replay</span>
             <label class="toggle" title="Replay the target tone after a correct hit">
-              <input id="replayToggle" type="checkbox" />
+              <input id="replayToggle" type="checkbox"/>
               <span class="track" aria-hidden="true"><span class="thumb"></span></span>
               <span id="replayState" class="toggleState">off</span>
             </label>
           </div>
 
-          <!-- SOUND + REPEAT -->
           <div class="row4" id="soundRepeatRow">
             <label>Sound</label>
             <span class="group">
-              <input id="soundInput" type="number" value="1000" />
+              <input id="soundInput" type="number" value="1000"/>
               <span class="unit">ms</span>
             </span>
             <span class="sub">Repeat</span>
             <span class="group">
-              <input id="repeatInput" type="number" value="2000" />
+              <input id="repeatInput" type="number" value="2000"/>
               <span class="unit">ms</span>
             </span>
           </div>
-
         </form>
-      </section>
 
-      <section class="panel">
         <div class="actions">
           <button id="toggleBtn" class="primary" type="button">Start</button>
           <button id="tonicBtn" class="hidden" type="button">Tonic</button>
         </div>
-      </section>
 
-      <section class="panel" aria-live="polite">
-        <div id="lastNote">—</div>
+        <section aria-live="polite">
+          <div id="lastNote">-</div>
 
-        <div id="tuner" aria-hidden="false">
-          <div class="tuner-bar">
-            <div class="tuner-center"></div>
-            <div id="tunerNeedle" class="tuner-needle off"></div>
+          <div id="tuner" aria-hidden="false">
+            <div class="tuner-bar">
+              <div class="tuner-center"></div>
+              <div id="tunerNeedle" class="tuner-needle off"></div>
+            </div>
+            <div id="tunerReadout" class="tuner-readout">-</div>
           </div>
-          <div id="tunerReadout" class="tuner-readout">—</div>
-        </div>
 
-        <div class="stats">
-          <div class="stat"><span class="k">Time:</span><span class="v"><span id="elapsed">0</span>s</span></div>
-          <div class="stat"><span class="k">Correct:</span><span class="v"><span id="correct">0</span></span></div>
-          <div class="stat"><span class="k">Note:</span><span class="v"><span id="noteTime">0</span>s</span></div>
-          <div class="stat"><span class="k">Avg:</span><span class="v"><span id="avgNote">0.00</span>s</span></div>
-        </div>
-        <div id="debugWrap" class="debugWrap">
-          <button id="debugToggleBtn" class="debugToggle" type="button">Debug</button>
-          <div id="debugPanel" class="debugGrid hidden">
-            <div class="debugRow"><span class="debugK">Freq Hz</span><span id="dbgFreq" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Goal Hz</span><span id="dbgGoal" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Diff ¢</span><span id="dbgDiff" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Clarity</span><span id="dbgClarity" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">dBFS</span><span id="dbgDb" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Tol ¢</span><span id="dbgTol" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Loud</span><span id="dbgLoud" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Clear</span><span id="dbgClear" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Has In</span><span id="dbgHasInput" class="debugV">—</span></div>
-            <div class="debugRow"><span class="debugK">Mode</span><span id="dbgMode" class="debugV">—</span></div>
+          <div class="stats">
+            <div class="stat"><span class="k">Time:</span><span class="v"><span id="elapsed">0</span>s</span></div>
+            <div class="stat"><span class="k">Correct:</span><span class="v"><span id="correct">0</span></span></div>
+            <div class="stat"><span class="k">Note:</span><span class="v"><span id="noteTime">0</span>s</span></div>
+            <div class="stat"><span class="k">Avg:</span><span class="v"><span id="avgNote">0.00</span>s</span></div>
           </div>
-        </div>
-      </section>
-    </main>
+
+          <div id="debugWrap" class="debugWrap">
+            <button id="debugToggleBtn" class="debugToggle" type="button">Debug</button>
+            <div id="debugPanel" class="debugGrid hidden">
+              <div class="debugRow"><span class="debugK">Freq Hz</span><span id="dbgFreq" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Goal Hz</span><span id="dbgGoal" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Diff ¢</span><span id="dbgDiff" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Clarity</span><span id="dbgClarity" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">dBFS</span><span id="dbgDb" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Tol ¢</span><span id="dbgTol" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Loud</span><span id="dbgLoud" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Clear</span><span id="dbgClear" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Has In</span><span id="dbgHasInput" class="debugV">-</span></div>
+              <div class="debugRow"><span class="debugK">Mode</span><span id="dbgMode" class="debugV">-</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 
   <script src="js/app.js"></script>
@@ -667,7 +613,6 @@
 
   <script>
     (function(){
-      // Disable zoom gestures/double-tap zoom on mobile Safari.
       document.addEventListener("gesturestart", function(e){ e.preventDefault(); }, { passive:false });
       document.addEventListener("dblclick", function(e){ e.preventDefault(); }, { passive:false });
 
@@ -682,7 +627,6 @@
     })();
   </script>
 
-  <!-- SAFE SCALING -->
   <script>
     (function(){
       const DESIGN = 470;
