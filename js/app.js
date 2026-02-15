@@ -1105,12 +1105,28 @@
     els.avgNote.textContent = avg.toFixed(2);
   }
 
+  function formatElapsedClock(totalSec){
+    const n = Math.max(0, Number(totalSec) || 0);
+    const whole = Math.floor(n);
+    const sec = whole % 60;
+    const totalMin = Math.floor(whole / 60);
+    if(totalMin >= 60){
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    }
+    if(totalMin >= 10){
+      return `${String(totalMin).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    }
+    return `${totalMin}:${String(sec).padStart(2, "0")}`;
+  }
+
   function startUITimer(){
     if(uiTimer) clearInterval(uiTimer);
     uiTimer = setInterval(()=>{
       if(!running) return;
       const elapsedSec = Math.floor((performance.now() - startTs) / 1000);
-      els.elapsed.textContent = String(elapsedSec);
+      els.elapsed.textContent = formatElapsedClock(elapsedSec);
       els.correct.textContent = String(correctCount);
     }, 250);
   }
@@ -1240,11 +1256,11 @@
 
     startTs = performance.now();
     correctCount = 0;
-    els.elapsed.textContent = "0";
+    els.elapsed.textContent = "0:00";
     els.correct.textContent = "0";
 
     lastNoteSeconds = 0;
-    els.noteTime.textContent = "0";
+    els.noteTime.textContent = "0.00";
 
     totalSolvedSeconds = 0;
     els.avgNote.textContent = "0.00";
@@ -1342,8 +1358,8 @@
             hitLocked = true;
             correctCount += 1;
 
-          lastNoteSeconds = Math.floor((performance.now() - noteStartTs) / 1000);
-          els.noteTime.textContent = String(lastNoteSeconds);
+          lastNoteSeconds = (performance.now() - noteStartTs) / 1000;
+          els.noteTime.textContent = lastNoteSeconds.toFixed(2);
 
           totalSolvedSeconds += lastNoteSeconds;
           updateAvgNote();
@@ -1398,8 +1414,8 @@
 
   function stop(){
     if(running && noteStartTs){
-      lastNoteSeconds = Math.floor((performance.now() - noteStartTs) / 1000);
-      els.noteTime.textContent = String(lastNoteSeconds);
+      lastNoteSeconds = (performance.now() - noteStartTs) / 1000;
+      els.noteTime.textContent = lastNoteSeconds.toFixed(2);
     }
     updateAvgNote();
     running = false;
